@@ -25,11 +25,11 @@ datasource = glueContext.create_dynamic_frame.from_catalog(
 df = datasource.toDF()
 
 columns_needed = [
-    'Rndrng_NPI', 'Rndrng_Prvdr_Last_Org_Name', 'Rndrng_Prvdr_Type',
-    'Rndrng_Prvdr_State_Abrvtn', 'Tot_Mdcr_Pymt_Amt', 'Tot_Sbmtd_Chrg',
-    'Tot_Mdcr_Alowd_Amt', 'Tot_Benes', 'Tot_Srvcs',
-    'Bene_CC_PH_Diabetes_V2_Pct', 'Bene_CC_PH_Hypertension_V2_Pct',
-    'Bene_CC_PH_HF_NonIHD_V2_Pct', 'Bene_CC_PH_CKD_V2_Pct'
+    'rndrng_npi', 'rndrng_prvdr_last_org_name', 'rndrng_prvdr_type',
+    'rndrng_prvdr_state_abrvtn', 'tot_mdcr_pymt_amt', 'tot_sbmtd_chrg',
+    'tot_mdcr_alowd_amt', 'tot_benes', 'tot_srvcs',
+    'bene_cc_ph_diabetes_v2_pct', 'bene_cc_ph_hypertension_v2_pct',
+    'bene_cc_ph_hf_nonihd_v2_pct', 'bene_cc_ph_ckd_v2_pct'
 ]
 
 df = df.select([col(c) for c in columns_needed])
@@ -49,7 +49,7 @@ df = df.withColumn('Tot_Srvcs', col('Tot_Srvcs').cast('int'))
 
 ## Add outlier flag
 df = df.withColumn('is_high_cost_outlier',
-    when(col('Tot_Mdcr_Pymt_Amt') > 1033737, True).otherwise(False)
+    when(col('tot_mdcr_pymt_amt') > 1033737, True).otherwise(False)
 )
 
 #--------Section 4------------#
@@ -58,7 +58,7 @@ output_path = "s3://cms-medical-pipeline-jtz/processed/"
 
 df.write\
     .mode("overwrite")\
-    .partitionBy("Rndrng_Prvdr_State_Abrvtn")\
+    .partitionBy("rndrng_prvdr_state_abrvtn")\
     .parquet(output_path)
 
 ## Commit job
