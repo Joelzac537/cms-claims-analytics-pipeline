@@ -57,7 +57,7 @@ df = df.withColumn('is_high_cost_outlier',
 output_path = "s3://cms-medical-pipeline-jtz/processed/"
 
 df.write\
-    .mode("overwrite")\
+    .mode("append")\
     .partitionBy("rndrng_prvdr_state_abrvtn")\
     .parquet(output_path)
 
