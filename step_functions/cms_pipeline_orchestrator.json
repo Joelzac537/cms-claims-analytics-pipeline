@@ -1,0 +1,70 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Glue StartJobRun",
+  "States": {
+    "Glue StartJobRun": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "cms-etl-transform"
+      },
+      "Next": "Run-Quality-Check",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Send-Failure-Notification"
+        }
+      ]
+    },
+    "Send-Failure-Notification": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-2:933022095648:cms-pipeline-alerts",
+        "Message": {
+          "Message": "CMS Pipeline FAILED! Please check the Glue job logs."
+        }
+      },
+      "End": true
+    },
+    "Run-Quality-Check": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-2:933022095648:function:cms-file-validator:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Send-Success-Notification"
+    },
+    "Send-Success-Notification": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-2:933022095648:cms-pipeline-alerts",
+        "Message": {
+          "Message": "CMS Pipeline completed successfully! The ETL job has processed the latest CMS provider data."
+        }
+      },
+      "End": true
+    }
+  },
+  "QueryLanguage": "JSONPath",
+  "TimeoutSeconds": 1800
+}
