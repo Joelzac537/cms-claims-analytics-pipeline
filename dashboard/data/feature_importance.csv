@@ -1,0 +1,115 @@
+feature,importance
+provider_type_Ambulatory Surgical Center,9297.8828125
+services,6271.87109375
+provider_type_Physical Therapist in Private Practice,1464.9609375
+provider_type_Radiation Oncology,1286.543701171875
+provider_type_Ophthalmology,896.4007568359375
+provider_type_Internal Medicine,847.1043701171875
+provider_type_Dermatology,814.53515625
+provider_type_Family Practice,800.827392578125
+provider_type_Nurse Practitioner,798.385009765625
+provider_type_Hematology-Oncology,784.5794677734375
+provider_type_Diagnostic Radiology,778.2583618164062
+provider_type_Vascular Surgery,715.5006713867188
+provider_type_Podiatry,678.8877563476562
+provider_type_Nuclear Medicine,663.55078125
+provider_type_Micrographic Dermatologic Surgery,633.3818359375
+beneficiaries,631.774658203125
+provider_type_General Surgery,595.732177734375
+provider_type_Pharmacy,582.6243286132812
+provider_type_Mass Immunizer Roster Biller,577.4473266601562
+provider_type_Gastroenterology,529.552978515625
+provider_type_Occupational Therapist in Private Practice,501.1347961425781
+provider_type_Endocrinology,481.8684387207031
+provider_type_Ambulance Service Provider,456.0789794921875
+provider_type_Optometry,454.5731506347656
+provider_type_Opioid Treatment Program,443.22454833984375
+provider_type_Interventional Radiology,406.5323181152344
+provider_type_Orthopedic Surgery,402.20855712890625
+provider_type_Pulmonary Disease,380.7109069824219
+provider_type_Plastic and Reconstructive Surgery,379.3540344238281
+provider_type_Cardiology,377.2003173828125
+provider_type_Nephrology,372.3070373535156
+provider_type_Allergy/ Immunology,370.6432189941406
+pct_heart_failure,353.48480224609375
+provider_type_Rheumatology,350.5228576660156
+provider_type_Thoracic Surgery,349.9256286621094
+provider_type_Urology,332.47515869140625
+provider_type_Independent Diagnostic Testing Facility (IDTF),332.3418273925781
+provider_type_Physical Medicine and Rehabilitation,327.7247619628906
+provider_type_Medical Oncology,308.95770263671875
+provider_type_Pathology,307.9052429199219
+provider_type_Colorectal Surgery (Proctology),287.70550537109375
+provider_type_Neurology,286.4623718261719
+provider_type_Otolaryngology,285.6333923339844
+provider_type_Physician Assistant,282.4686279296875
+provider_type_Clinical Cardiac Electrophysiology,282.0335388183594
+pct_diabetes,280.665283203125
+provider_type_Clinical Laboratory,270.93756103515625
+provider_type_Interventional Cardiology,260.8139953613281
+provider_type_Radiation Therapy Center,259.5414733886719
+provider_type_Neurosurgery,256.3565979003906
+provider_type_Pain Management,248.817138671875
+provider_type_General Practice,248.1292266845703
+state_AZ,236.7699432373047
+provider_type_Oral Surgery (Dentist only),234.3457794189453
+provider_type_Cardiac Surgery,233.56504821777344
+provider_type_All Other Suppliers,222.2648468017578
+state_CA,222.20388793945312
+state_MD,196.99749755859375
+state_UT,190.03646850585938
+state_NE,187.5564727783203
+provider_type_Anesthesiology,181.11492919921875
+state_TX,177.44886779785156
+pct_ckd,170.88941955566406
+provider_type_Hospitalist,168.9159698486328
+provider_type_Centralized Flu,165.86044311523438
+state_AR,165.81640625
+state_NV,165.76287841796875
+state_KY,152.5293731689453
+state_NJ,149.5169677734375
+state_OK,149.49838256835938
+state_AK,148.7352752685547
+"provider_type_Psychologist, Clinical",142.51327514648438
+provider_type_Obstetrics & Gynecology,142.3021697998047
+state_WA,135.6219482421875
+state_NY,131.4075927734375
+provider_type_Sports Medicine,126.60437774658203
+state_SC,123.53608703613281
+state_CO,123.01066589355469
+state_AL,122.97309112548828
+state_FL,118.49925994873047
+provider_type_Peripheral Vascular Disease,118.42021179199219
+state_WI,112.71099853515625
+provider_type_Infectious Disease,108.31926727294922
+state_OH,104.76245880126953
+state_NM,102.54718017578125
+state_NC,98.71603393554688
+provider_type_Speech Language Pathologist,95.523193359375
+pct_hypertension,93.98937225341797
+state_MS,89.57179260253906
+state_SD,87.57295227050781
+state_VA,86.72759246826172
+state_TN,86.40042877197266
+provider_type_Undefined Physician type,80.57542419433594
+state_KS,79.24813842773438
+state_IN,76.5137939453125
+state_GA,74.96675109863281
+provider_type_Interventional Pain Management,73.86848449707031
+state_HI,69.02815246582031
+state_MN,65.64900207519531
+state_PA,64.77305603027344
+state_ID,60.95117950439453
+state_MI,60.531288146972656
+state_MA,56.32963562011719
+state_MO,55.987205505371094
+state_IL,54.884178161621094
+state_MT,50.77077865600586
+state_PR,43.9173583984375
+state_CT,40.873252868652344
+provider_type_Pediatric Medicine,40.567657470703125
+state_LA,39.70691680908203
+state_OR,14.57388973236084
+provider_type_Certified Registered Nurse Anesthetist (CRNA),2.7630691528320312
+state_NH,0.7576904296875
+state_ND,0.7357177734375
