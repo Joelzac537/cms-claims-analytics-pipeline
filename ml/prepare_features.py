@@ -74,7 +74,7 @@ def build_features(df: pd.DataFrame):
 # ============================================================
 # STEP 3 -- split and persist (local + S3)
 # ============================================================
-def save_and_upload(X: pd.DataFrame, y: pd.Series):
+def save_and_upload(df: pd.DataFrame, X: pd.DataFrame, y: pd.Series):
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
 
     X_train, X_val, y_train, y_val = train_test_split(
@@ -111,7 +111,7 @@ def save_and_upload(X: pd.DataFrame, y: pd.Series):
 def main():
     df = load_fact()
     X, y = build_features(df)
-    save_and_upload(X, y)
+    save_and_upload(df, X, y)
     print("\nFeature prep complete -> ml/artifacts/ and s3://.../ml/input/")
 
 
