@@ -65,11 +65,21 @@ def _load_booster() -> xgb.Booster:
     print(f"Downloading s3://{settings.S3_BUCKET}/{key}")
     get_client("s3").download_file(settings.S3_BUCKET, key, str(local_tar))
     with tarfile.open(local_tar) as tar:
-        tar.extractall(ARTIFACTS)
+        tar.extractall(ARTIFACTS, filter="data")
 
-    # built-in XGBoost saves a pickled Booster named 'xgboost-model'
-    with open(ARTIFACTS / "xgboost-model", "rb") as fh:
-        return pickle.load(fh)
+    model_path = ARTIFACTS / "xgboost-model"
+
+    # Built-in XGBoost 1.7 saves in XGBoost's NATIVE format -- load that first
+    # (it's also tolerant of version differences). Fall back to pickle for
+    # older-style artifacts (Booster or sklearn wrapper).
+    booster = xgb.Booster()
+    try:
+        booster.load_model(str(model_path))
+        return booster
+    except xgb.core.XGBoostError:
+        with open(model_path, "rb") as fh:
+            obj = pickle.load(fh)
+        return obj.get_booster() if hasattr(obj, "get_booster") else obj
 
 
 # ============================================================
