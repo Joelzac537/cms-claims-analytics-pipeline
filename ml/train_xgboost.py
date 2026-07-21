@@ -78,7 +78,9 @@ def _build_request(job_name: str, role: str) -> dict:
         "HyperParameters": {
             "objective": "binary:logistic",
             "eval_metric": "aucpr",
-            "num_round": "300",
+            # 'hist' is far faster than the default on a small instance
+            "tree_method": "hist",
+            "num_round": "150",
             "max_depth": "6",
             "eta": "0.1",
             "subsample": "0.8",
