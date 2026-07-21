@@ -1,0 +1,12 @@
+# Streamlit theme -- light, patient-oriented healthcare palette
+# (calming teal on a soft off-white background, not the default dark).
+[theme]
+base = "light"
+primaryColor = "#159A93"              # teal accent
+backgroundColor = "#F3F8F8"           # soft off-white with a hint of teal
+secondaryBackgroundColor = "#FFFFFF"  # cards / widgets
+textColor = "#1F3A44"                 # deep slate
+font = "sans serif"
+
+[server]
+headless = true

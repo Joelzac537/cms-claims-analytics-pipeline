@@ -35,6 +35,10 @@ model/
 # ============================================================
 dashboard/exports/
 
+# Committed dashboard snapshot for hosting (overrides the *.csv ignore above)
+!dashboard/data/
+!dashboard/data/*.csv
+
 # ============================================================
 # Python
 # ============================================================

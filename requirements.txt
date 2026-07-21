@@ -20,3 +20,4 @@ matplotlib>=3.8           # feature-importance plot
 
 # --- Dashboard ---
 streamlit>=1.33
+altair>=5                # custom charts in the dashboard
