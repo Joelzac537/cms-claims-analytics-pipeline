@@ -6,6 +6,8 @@ records, cleans and quality-checks them, models an analytics-ready gold
 layer, trains an XGBoost model to flag high-cost providers, and serves it all
 through an interactive healthcare dashboard.
 
+**🔗 [Live dashboard →](https://cms-claims-analytics-pipeline.streamlit.app/)**
+
 > **Scope note (honest by design):** the source is **provider-level summary
 > data**, not individual claims. No Redshift, Airflow, or dbt are used — the
 > stack is deliberately serverless and cost-minimal (Athena over Parquet).
@@ -136,9 +138,9 @@ choropleth** of Medicare spend, chronic-condition maps, and the ML risk model
 <!-- Add a screenshot at docs/dashboard.png to show it off here -->
 ![Dashboard](docs/dashboard.png)
 
-*Live demo:* deploy free on [Streamlit Community Cloud](https://share.streamlit.io)
-(main file `dashboard/app.py`) — it reads the committed `dashboard/data/`
-snapshot, so no AWS credentials are needed to view it.
+**Live demo:** [cms-claims-analytics-pipeline.streamlit.app](https://cms-claims-analytics-pipeline.streamlit.app/)
+— hosted on Streamlit Community Cloud, reading the committed `dashboard/data/`
+snapshot (no AWS credentials needed to view it).
 
 ---
 
