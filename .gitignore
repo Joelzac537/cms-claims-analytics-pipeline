@@ -13,8 +13,14 @@ data/
 *.pem
 .aws/
 credentials
+
+# ============================================================
+# Local scratch / verification output (not part of the codebase)
+# ============================================================
 aws_discovery.txt
 dq_check.txt
+dq_results.json
+*_precheck.txt
 
 # ============================================================
 # ML artifacts (models can be large; regenerate instead)
