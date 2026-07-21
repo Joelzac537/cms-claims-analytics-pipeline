@@ -51,7 +51,8 @@ STATE_MACHINE_ARN = (
 SNS_TOPIC_NAME = "cms-pipeline-alerts"
 SNS_TOPIC_ARN = f"arn:aws:sns:{AWS_REGION}:{ACCOUNT_ID}:{SNS_TOPIC_NAME}"
 
-EVENTBRIDGE_RULE_NAME = "cms-raw-upload-trigger"
+# The S3-triggered Lambda that validates uploads and starts the state machine.
+LAMBDA_FUNCTION = "cms-file-validator"
 
 # ============================================================
 # ATHENA

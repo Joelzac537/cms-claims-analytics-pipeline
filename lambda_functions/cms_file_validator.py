@@ -1,42 +1,59 @@
+"""
+S3-triggered entry point for the CMS pipeline.
+
+Flow:  new CSV in raw/  ->  (this Lambda)  ->  Step Functions state machine
+
+This Lambda validates the uploaded file, then STARTS the state machine
+(cms-pipeline-orchestrator), which runs the Glue ETL + data-quality job and
+sends SNS notifications. It deliberately does NOT start Glue directly --
+orchestration is the state machine's job now.
+"""
+
 import json
 import boto3
 
+# ============================================================
+# CONFIG
+# ============================================================
+# The orchestration state machine this validator kicks off.
+STATE_MACHINE_ARN = (
+    "arn:aws:states:us-east-2:933022095648:stateMachine:cms-pipeline-orchestrator"
+)
+
+sfn = boto3.client("stepfunctions", region_name="us-east-2")
+
+
+# ============================================================
+# HANDLER
+# ============================================================
 def lambda_handler(event, context):
-    # Get file details from the event
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = event['Records'][0]['s3']['object']['key']
-    size = event['Records'][0]['s3']['object']['size']
-    
-    print(f"File received: {key} in bucket: {bucket}, size: {size} bytes")
-    
-    # Validate the file
-    if not key.endswith('.csv'):
-        print(f"ERROR: File {key} is not a CSV file!")
-        return {
-            'statusCode': 400,
-            'body': json.dumps(f'Invalid file type: {key}')
-        }
-    
+    # ---- read the S3 event ----
+    s3 = event["Records"][0]["s3"]
+    bucket = s3["bucket"]["name"]
+    key = s3["object"]["key"]
+    size = s3["object"]["size"]
+    print(f"File received: {key} in {bucket} ({size} bytes)")
+
+    # ---- validate ----
+    if not key.endswith(".csv"):
+        print(f"ERROR: {key} is not a CSV file!")
+        return {"statusCode": 400, "body": json.dumps(f"Invalid file type: {key}")}
+
     if size == 0:
-        print(f"ERROR: File {key} is empty!")
-        return {
-            'statusCode': 400,
-            'body': json.dumps(f'Empty file: {key}')
-        }
-    
+        print(f"ERROR: {key} is empty!")
+        return {"statusCode": 400, "body": json.dumps(f"Empty file: {key}")}
+
     print(f"Validation passed for {key}")
-    
-    # Trigger Glue ETL job
-    glue_client = boto3.client('glue', region_name='us-east-2')
-    
-    response = glue_client.start_job_run(
-        JobName='cms-etl-transform'
+
+    # ---- start the orchestration ----
+    response = sfn.start_execution(
+        stateMachineArn=STATE_MACHINE_ARN,
+        input=json.dumps({"bucket": bucket, "key": key}),
     )
-    
-    job_run_id = response['JobRunId']
-    print(f"Glue job started successfully! Run ID: {job_run_id}")
-    
+    execution_arn = response["executionArn"]
+    print(f"Started state machine: {execution_arn}")
+
     return {
-        'statusCode': 200,
-        'body': json.dumps(f'Validation passed. Glue job started: {job_run_id}')
+        "statusCode": 200,
+        "body": json.dumps(f"Validation passed. Pipeline started for {key}"),
     }

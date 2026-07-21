@@ -1,5 +1,5 @@
 {
-  "Comment": "A description of my state machine",
+  "Comment": "CMS pipeline: run the Glue ETL (with in-job data-quality checks), then notify via SNS. Started by the cms-file-validator Lambda after a valid upload.",
   "StartAt": "Glue StartJobRun",
   "States": {
     "Glue StartJobRun": {
@@ -8,7 +8,7 @@
       "Parameters": {
         "JobName": "cms-etl-transform"
       },
-      "Next": "Run-Quality-Check",
+      "Next": "Send-Success-Notification",
       "Catch": [
         {
           "ErrorEquals": [
@@ -18,49 +18,21 @@
         }
       ]
     },
-    "Send-Failure-Notification": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::sns:publish",
-      "Parameters": {
-        "TopicArn": "arn:aws:sns:us-east-2:933022095648:cms-pipeline-alerts",
-        "Message": {
-          "Message": "CMS Pipeline FAILED! Please check the Glue job logs."
-        }
-      },
-      "End": true
-    },
-    "Run-Quality-Check": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
-      "Parameters": {
-        "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:933022095648:function:cms-file-validator:$LATEST"
-      },
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "Lambda.ServiceException",
-            "Lambda.AWSLambdaException",
-            "Lambda.SdkClientException",
-            "Lambda.TooManyRequestsException"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 3,
-          "BackoffRate": 2,
-          "JitterStrategy": "FULL"
-        }
-      ],
-      "Next": "Send-Success-Notification"
-    },
     "Send-Success-Notification": {
       "Type": "Task",
       "Resource": "arn:aws:states:::sns:publish",
       "Parameters": {
         "TopicArn": "arn:aws:sns:us-east-2:933022095648:cms-pipeline-alerts",
-        "Message": {
-          "Message": "CMS Pipeline completed successfully! The ETL job has processed the latest CMS provider data."
-        }
+        "Message": "CMS Pipeline completed successfully! The Glue ETL job (with data-quality checks) processed the latest CMS provider data."
+      },
+      "End": true
+    },
+    "Send-Failure-Notification": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-2:933022095648:cms-pipeline-alerts",
+        "Message": "CMS Pipeline FAILED! Please check the Glue job logs."
       },
       "End": true
     }
