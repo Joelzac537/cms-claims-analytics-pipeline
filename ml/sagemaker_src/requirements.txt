@@ -1,5 +1,0 @@
-# Installed by SageMaker inside the training container before train.py runs.
-xgboost>=2.0
-scikit-learn>=1.4
-pandas>=2.0
-joblib>=1.3

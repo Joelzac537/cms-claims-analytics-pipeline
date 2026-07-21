@@ -1,31 +1,27 @@
 """
-ML step 2 -- launch the SageMaker XGBoost training job.
+ML step 2 -- launch a SageMaker XGBoost training job via boto3.
 
-!!! THIS COSTS MONEY !!!
-It starts a managed training instance on AWS. Costs are kept small by:
-  * a small instance (ml.m5.large),
-  * managed SPOT instances (~70% cheaper),
-  * a hard 30-minute max_run ceiling,
-  * NO persistent inference endpoint (we score locally in ml/score.py).
-Still, only run this from your terminal when you intend to spend:
-    python -m ml.train_xgboost
+Uses SageMaker's BUILT-IN XGBoost algorithm through the plain boto3
+SageMaker client -- deliberately NO sagemaker SDK (its v3 rewrite broke the
+classic API, and boto3 is stable across versions).
 
-Prerequisite: a SageMaker execution role. Set settings.SAGEMAKER_ROLE_ARN
-(or export SAGEMAKER_ROLE_ARN). This is a role SageMaker assumes -- an IAM
-user cannot be used directly.
+!!! THIS COSTS MONEY !!! (a small, spot, time-capped training job -- cents)
+Kept cheap by: ml.m5.large + managed spot + a 30-min max_run + no endpoint.
+
+Prerequisite: a SageMaker execution role -- run ml.create_sagemaker_role,
+then set settings.SAGEMAKER_ROLE_ARN or export SAGEMAKER_ROLE_ARN.
+
+Run:  python -m ml.train_xgboost
 """
 
 import os
-from pathlib import Path
-
-import sagemaker
-from sagemaker.inputs import TrainingInput
-from sagemaker.xgboost import XGBoost
+import time
 
 from config import settings
-from config.aws_session import get_session
+from config.aws_session import get_client
 
-_SRC_DIR = Path(__file__).parent / "sagemaker_src"
+_TERMINAL = {"Completed", "Failed", "Stopped"}
+_POLL_SECONDS = 20
 
 
 # ============================================================
@@ -35,57 +31,97 @@ def _resolve_role() -> str:
     role = os.environ.get("SAGEMAKER_ROLE_ARN") or settings.SAGEMAKER_ROLE_ARN
     if not role:
         raise SystemExit(
-            "No SageMaker execution role set.\n"
-            "Create a role trusting sagemaker.amazonaws.com with "
-            "AmazonSageMakerFullAccess + S3 access to the pipeline bucket, "
+            "No SageMaker execution role set. Run:\n"
+            "  python -m ml.create_sagemaker_role\n"
             "then set settings.SAGEMAKER_ROLE_ARN or export SAGEMAKER_ROLE_ARN."
         )
     return role
 
 
 # ============================================================
-# Build the estimator
+# Build the training-job request
 # ============================================================
-def _build_estimator() -> XGBoost:
-    sm_session = sagemaker.Session(boto_session=get_session())
-    max_wait = settings.SAGEMAKER_MAX_RUNTIME_SEC + 600  # spot queue slack
-
-    return XGBoost(
-        entry_point="train.py",
-        source_dir=str(_SRC_DIR),
-        framework_version="1.7-1",
-        role=_resolve_role(),
-        instance_type=settings.SAGEMAKER_INSTANCE_TYPE,
-        instance_count=1,
-        output_path=settings.s3_uri(settings.ML_MODEL_PREFIX),
-        sagemaker_session=sm_session,
-        use_spot_instances=settings.SAGEMAKER_USE_SPOT,
-        max_run=settings.SAGEMAKER_MAX_RUNTIME_SEC,
-        max_wait=max_wait if settings.SAGEMAKER_USE_SPOT else None,
-        hyperparameters={
-            "n-estimators": 300,
-            "max-depth": 6,
-            "learning-rate": 0.1,
-        },
-    )
-
-
-# ============================================================
-# MAIN -- point at the S3 channels and fit
-# ============================================================
-def main():
+def _build_request(job_name: str, role: str) -> dict:
     base = settings.s3_uri(settings.ML_TRAIN_PREFIX)
-    channels = {
-        "train": TrainingInput(f"{base}train.csv", content_type="text/csv"),
-        "validation": TrainingInput(f"{base}validation.csv", content_type="text/csv"),
+
+    def _channel(name: str, filename: str) -> dict:
+        return {
+            "ChannelName": name,
+            "ContentType": "text/csv",
+            "DataSource": {
+                "S3DataSource": {
+                    "S3DataType": "S3Prefix",
+                    "S3Uri": f"{base}{filename}",
+                    "S3DataDistributionType": "FullyReplicated",
+                }
+            },
+        }
+
+    request = {
+        "TrainingJobName": job_name,
+        "AlgorithmSpecification": {
+            "TrainingImage": settings.XGBOOST_IMAGE_URI,
+            "TrainingInputMode": "File",
+        },
+        "RoleArn": role,
+        "InputDataConfig": [
+            _channel("train", "train.csv"),
+            _channel("validation", "validation.csv"),
+        ],
+        "OutputDataConfig": {"S3OutputPath": settings.s3_uri(settings.ML_MODEL_PREFIX)},
+        "ResourceConfig": {
+            "InstanceType": settings.SAGEMAKER_INSTANCE_TYPE,
+            "InstanceCount": 1,
+            "VolumeSizeInGB": 10,
+        },
+        "StoppingCondition": {"MaxRuntimeInSeconds": settings.SAGEMAKER_MAX_RUNTIME_SEC},
+        "HyperParameters": {
+            "objective": "binary:logistic",
+            "eval_metric": "aucpr",
+            "num_round": "300",
+            "max_depth": "6",
+            "eta": "0.1",
+            "subsample": "0.8",
+            "colsample_bytree": "0.8",
+            # positive (outlier) class is ~1% -> weight it ~ neg/pos = 99
+            "scale_pos_weight": "99",
+        },
     }
 
-    estimator = _build_estimator()
-    print("Starting SageMaker training job (billable) ...")
-    estimator.fit(channels)
+    if settings.SAGEMAKER_USE_SPOT:
+        request["EnableManagedSpotTraining"] = True
+        request["StoppingCondition"]["MaxWaitTimeInSeconds"] = (
+            settings.SAGEMAKER_MAX_RUNTIME_SEC + 600
+        )
 
-    print("\nTraining complete.")
-    print(f"Model artifact: {estimator.model_data}")
+    return request
+
+
+# ============================================================
+# MAIN -- create the job and poll to completion
+# ============================================================
+def main():
+    sm = get_client("sagemaker")
+    job_name = f"cms-xgb-{int(time.time())}"
+
+    print(f"Starting SageMaker training job {job_name} (billable) ...")
+    sm.create_training_job(**_build_request(job_name, _resolve_role()))
+
+    while True:
+        desc = sm.describe_training_job(TrainingJobName=job_name)
+        status = desc["TrainingJobStatus"]
+        if status in _TERMINAL:
+            break
+        print(f"  {status} / {desc.get('SecondaryStatus', '')} ...")
+        time.sleep(_POLL_SECONDS)
+
+    print(f"\nTraining job {status}.")
+    if status != "Completed":
+        raise SystemExit(desc.get("FailureReason", "See SageMaker console for details."))
+
+    print(f"Model artifact: {desc['ModelArtifacts']['S3ModelArtifacts']}")
+    for metric in desc.get("FinalMetricDataList", []):
+        print(f"  {metric['MetricName']}: {metric['Value']:.4f}")
     print("Next: python -m ml.score   (scores locally, no endpoint cost)")
 
 

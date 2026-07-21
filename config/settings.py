@@ -76,3 +76,10 @@ ML_MODEL_PREFIX = f"{ML_PREFIX}model/"
 # (or export SAGEMAKER_ROLE_ARN). Leave "" until you've created one; the
 # training launcher will tell you how if it's missing.
 SAGEMAKER_ROLE_ARN = ""
+
+# Built-in XGBoost algorithm container for us-east-2 (account 257758044811 is
+# AWS's XGBoost image account for this region). We call SageMaker via boto3 --
+# no SageMaker SDK dependency.
+XGBOOST_IMAGE_URI = (
+    "257758044811.dkr.ecr.us-east-2.amazonaws.com/sagemaker-xgboost:1.7-1"
+)

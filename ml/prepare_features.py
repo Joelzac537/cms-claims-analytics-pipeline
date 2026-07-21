@@ -59,11 +59,14 @@ def build_features(df: pd.DataFrame):
     drop_cols = [c for c in (LEAKAGE_COLS + [TARGET, ID_COL]) if c in df.columns]
     X = df.drop(columns=drop_cols)
 
-    # one-hot encode the categorical keys so XGBoost can use them
+    # one-hot encode the categorical keys so XGBoost can use them.
+    # dtype=int (not bool) so the CSV is numeric -- built-in XGBoost can't
+    # parse "True"/"False".
     X = pd.get_dummies(
         X,
         columns=[c for c in CATEGORICAL if c in X.columns],
         dummy_na=False,
+        dtype=int,
     )
     X = X.fillna(0)
 
@@ -88,8 +91,11 @@ def save_and_upload(df: pd.DataFrame, X: pd.DataFrame, y: pd.Series):
     # scoring step can attach predictions back to specific providers.
     full = pd.concat([df[ID_COL], y.rename(TARGET), X], axis=1)
 
-    train.to_csv(ARTIFACTS / "train.csv", index=False)
-    val.to_csv(ARTIFACTS / "validation.csv", index=False)
+    # Built-in XGBoost wants CSV with the label in the FIRST column and
+    # NO header row -> train/validation are headerless.
+    train.to_csv(ARTIFACTS / "train.csv", index=False, header=False)
+    val.to_csv(ARTIFACTS / "validation.csv", index=False, header=False)
+    # full.csv is for local scoring -> keep the header + provider_npi.
     full.to_csv(ARTIFACTS / "full.csv", index=False)
 
     # record feature order so scoring reproduces the exact same columns
