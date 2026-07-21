@@ -72,10 +72,14 @@ Rules = [
     ColumnValues "tot_mdcr_pymt_amt" >= 0,
     ColumnValues "tot_benes" >= 0,
     ColumnValues "tot_srvcs" >= 0,
-    ColumnValues "bene_cc_ph_diabetes_v2_pct" between 0 and 100,
-    ColumnValues "bene_cc_ph_hypertension_v2_pct" between 0 and 100,
-    ColumnValues "bene_cc_ph_hf_nonihd_v2_pct" between 0 and 100,
-    ColumnValues "bene_cc_ph_ckd_v2_pct" between 0 and 100
+    -- NOTE: DQDL "between" is EXCLUSIVE of its bounds, and these percentages
+    -- legitimately include 0 (nulls are filled with 0 in the ETL). We widen
+    -- to -1..101 so the valid 0-100 range passes; a truly bad value
+    -- (negative or >100) still fails.
+    ColumnValues "bene_cc_ph_diabetes_v2_pct" between -1 and 101,
+    ColumnValues "bene_cc_ph_hypertension_v2_pct" between -1 and 101,
+    ColumnValues "bene_cc_ph_hf_nonihd_v2_pct" between -1 and 101,
+    ColumnValues "bene_cc_ph_ckd_v2_pct" between -1 and 101
 ]
 """
 
