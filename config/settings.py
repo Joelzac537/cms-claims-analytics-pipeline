@@ -66,7 +66,9 @@ ATHENA_OUTPUT_LOCATION = s3_uri(ATHENA_RESULTS_PREFIX)
 # Ephemeral, cost-conscious defaults: a small instance and managed spot
 # training so nothing is left running after a training job finishes.
 SAGEMAKER_INSTANCE_TYPE = "ml.m5.large"
-SAGEMAKER_USE_SPOT = True
+# On-demand: new accounts default the SPOT training quota to 0 instances.
+# The job is only a few minutes, so spot savings are negligible anyway.
+SAGEMAKER_USE_SPOT = False
 SAGEMAKER_MAX_RUNTIME_SEC = 1800     # hard 30-min ceiling per training job
 ML_TRAIN_PREFIX = f"{ML_PREFIX}input/"
 ML_MODEL_PREFIX = f"{ML_PREFIX}model/"
