@@ -43,6 +43,7 @@ def load_fact() -> pd.DataFrame:
         "SELECT * FROM fact_provider_metrics",
         database=settings.GLUE_DATABASE,
         workgroup=settings.ATHENA_WORKGROUP,
+        s3_output=settings.ATHENA_OUTPUT_LOCATION,
         boto3_session=get_session(),
     )
     print(f"  loaded {len(df):,} rows")

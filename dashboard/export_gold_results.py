@@ -36,6 +36,7 @@ def main():
             f"SELECT * FROM {view}",
             database=settings.GLUE_DATABASE,
             workgroup=settings.ATHENA_WORKGROUP,
+            s3_output=settings.ATHENA_OUTPUT_LOCATION,
             boto3_session=session,
         )
         df.to_csv(EXPORTS / filename, index=False)
