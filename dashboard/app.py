@@ -202,34 +202,36 @@ fi = load("feature_importance.csv")
 # ============================================================
 # PAGES
 # ============================================================
+def _clean_feature(df):
+    """Prettify one-hot feature names for display (drop the prefix)."""
+    d = df.copy()
+    d["feature"] = d["feature"].str.replace("provider_type_", "", regex=False)
+    return d
+
+
 def overview():
     page_head("Overview", "Cost, utilization and risk across U.S. Medicare providers")
-    if state is not None:
-        c1, c2, c3, c4 = st.columns(4)
-        kpi(c1, "🏥", "Total Medicare $",
-            f"${state['total_medicare_payment'].sum()/1e9:.1f}B", TEAL)
-        kpi(c2, "👥", "Beneficiaries",
-            f"{state['total_beneficiaries'].sum()/1e6:.1f}M", BLUE)
-        kpi(c3, "📍", "States", f"{len(state)}", MINT)
-        flagged = int(summary['flagged'][0]) if summary is not None else 0
-        kpi(c4, "⚠️", "High-cost flagged", f"{flagged:,}", CORAL)
-        st.write("")
-        left, right = st.columns([1.3, 1])
-        with left:
-            st.markdown('<div class="card"><h4>Medicare payment by state</h4>',
-                        unsafe_allow_html=True)
-            st.altair_chart(choropleth(state, "total_medicare_payment"),
+    if state is None:
+        missing("python -m dashboard.export_gold_results"); return
+    c1, c2, c3, c4 = st.columns(4)
+    kpi(c1, "🏥", "Total Medicare $",
+        f"${state['total_medicare_payment'].sum()/1e9:.1f}B", TEAL)
+    kpi(c2, "👥", "Beneficiaries",
+        f"{state['total_beneficiaries'].sum()/1e6:.1f}M", BLUE)
+    kpi(c3, "📍", "States", f"{len(state)}", MINT)
+    flagged = int(summary['flagged'][0]) if summary is not None else 0
+    kpi(c4, "⚠️", "High-cost flagged", f"{flagged:,}", CORAL)
+    st.write("")
+    left, right = st.columns([1.3, 1])
+    with left, st.container(border=True):
+        st.markdown("##### Medicare payment by state")
+        st.altair_chart(choropleth(state, "total_medicare_payment"),
+                        use_container_width=True)
+    with right, st.container(border=True):
+        if spec is not None:
+            st.markdown("##### Top specialties by avg payment")
+            st.altair_chart(hbar(spec, "provider_type", "avg_medicare_payment", BLUE, 8),
                             use_container_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-        with right:
-            if spec is not None:
-                st.markdown('<div class="card"><h4>Top specialties by avg payment</h4>',
-                            unsafe_allow_html=True)
-                st.altair_chart(hbar(spec, "provider_type", "avg_medicare_payment", BLUE, 8),
-                                use_container_width=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-    else:
-        missing("python -m dashboard.export_gold_results")
 
 
 def geographic():
@@ -240,9 +242,8 @@ def geographic():
         "Metric",
         ["total_medicare_payment", "avg_medicare_payment", "total_beneficiaries"],
         format_func=lambda s: s.replace("_", " ").title())
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.altair_chart(choropleth(state, metric), use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.altair_chart(choropleth(state, metric), use_container_width=True)
     st.dataframe(state, use_container_width=True, hide_index=True)
 
 
@@ -250,11 +251,10 @@ def specialty():
     page_head("Specialty", "Provider types driving the highest payments")
     if spec is None:
         missing("python -m dashboard.export_gold_results"); return
-    st.markdown('<div class="card"><h4>Top 15 by average Medicare payment</h4>',
-                unsafe_allow_html=True)
-    st.altair_chart(hbar(spec, "provider_type", "avg_medicare_payment", BLUE),
-                    use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown("##### Top 15 by average Medicare payment")
+        st.altair_chart(hbar(spec, "provider_type", "avg_medicare_payment", BLUE),
+                        use_container_width=True)
     st.dataframe(spec, use_container_width=True, hide_index=True)
 
 
@@ -265,11 +265,10 @@ def chronic_page():
     labels = {"avg_pct_diabetes": "Diabetes", "avg_pct_hypertension": "Hypertension",
               "avg_pct_heart_failure": "Heart failure", "avg_pct_ckd": "Chronic kidney disease"}
     choice = st.selectbox("Condition", list(labels), format_func=labels.get)
-    st.markdown(f'<div class="card"><h4>{labels[choice]} prevalence by state (%)</h4>',
-                unsafe_allow_html=True)
-    st.altair_chart(choropleth(chronic, choice, scheme="tealblues"),
-                    use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown(f"##### {labels[choice]} prevalence by state (%)")
+        st.altair_chart(choropleth(chronic, choice, scheme="tealblues"),
+                        use_container_width=True)
 
 
 def risk_page():
@@ -279,23 +278,26 @@ def risk_page():
     total = int(summary['total'][0]) if summary is not None else len(preds)
     flagged = int(summary['flagged'][0]) if summary is not None \
         else int(preds['actual_high_cost'].sum())
-    left, right = st.columns([1, 1.4])
-    with left:
-        c1, c2 = st.columns(2)
-        kpi(c1, "🧮", "Scored", f"{total:,}", TEAL)
-        kpi(c2, "⚠️", "High-cost", f"{flagged:,}", CORAL)
-        st.markdown('<div class="card"><h4>High-cost share</h4>', unsafe_allow_html=True)
+    pct = flagged / total * 100 if total else 0
+
+    c1, c2, c3 = st.columns(3)
+    kpi(c1, "🧮", "Providers scored", f"{total:,}", TEAL)
+    kpi(c2, "⚠️", "High-cost flagged", f"{flagged:,}", CORAL)
+    kpi(c3, "📊", "High-cost rate", f"{pct:.1f}%", BLUE)
+    st.write("")
+
+    left, right = st.columns([1, 1.5])
+    with left, st.container(border=True):
+        st.markdown("##### High-cost share")
         st.altair_chart(donut(flagged, total, "High-cost"), use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    with right:
+    with right, st.container(border=True):
         if fi is not None:
-            st.markdown('<div class="card"><h4>What drives high-cost risk</h4>',
-                        unsafe_allow_html=True)
-            st.altair_chart(hbar(fi, "feature", "importance", CORAL, 12),
+            st.markdown("##### What drives high-cost risk")
+            st.altair_chart(hbar(_clean_feature(fi), "feature", "importance", CORAL, 12),
                             use_container_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("#### Highest-risk providers")
-    st.dataframe(preds.head(50), use_container_width=True, hide_index=True)
+    with st.container(border=True):
+        st.markdown("##### Highest-risk providers")
+        st.dataframe(preds.head(50), use_container_width=True, hide_index=True)
 
 
 {
